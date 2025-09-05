@@ -1,0 +1,223 @@
+name: Chr-Node Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g., v1.0.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup Erlang/OTP and Elixir
+      uses: erlef/setup-beam@v1
+      with:
+        otp-version: '26.0'
+        elixir-version: '1.15.7'
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential git curl
+        sudo apt-get install -y libgmp3-dev libncurses-dev autoconf automake libtool
+    
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          deps
+          _build
+        key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-mix-
+    
+    - name: Install dependencies
+      run: |
+        mix local.hex --force
+        mix local.rebar --force
+        mix deps.get --only prod
+    
+    - name: Build release
+      env:
+        MIX_ENV: prod
+      run: |
+        TAG=${{ github.event.inputs.tag || github.ref_name }}
+        echo "Building Chr-Node release: $TAG"
+        mix release chr_node --overwrite
+    
+    - name: Test release
+      run: |
+        ./_build/prod/rel/chr_node/bin/chr_node version
+        ./_build/prod/rel/chr_node/bin/chr_node eval "IO.puts('Chr-Node release test successful')"
+    
+    - name: Create release archive
+      run: |
+        TAG=${{ github.event.inputs.tag || github.ref_name }}
+        ARCHIVE_NAME="chr-node-linux-amd64-${TAG}.tar.gz"
+        
+        cd _build/prod/rel/
+        tar -czf "../../../${ARCHIVE_NAME}" chr_node/
+        cd ../../..
+        
+        echo "ARCHIVE_NAME=$ARCHIVE_NAME" >> $GITHUB_ENV
+        echo "TAG=$TAG" >> $GITHUB_ENV
+    
+    - name: Build Snap package
+      uses: snapcore/action-build@v1
+      id: snapcraft
+    
+    - name: Generate release notes
+      run: |
+        TAG=${{ env.TAG }}
+        
+        cat > release-notes.md << EOF
+        # Chr-Node $TAG - Community P2P Infrastructure
+        
+        🚀 **Lightweight P2P nodes for the Chronara Network community**
+        
+        ## ✨ Features
+        
+        - **Multi-TLD Support**: Native `.com`, `.net`, `.ai`, `.io` domain resolution
+        - **Community Rewards**: Earn CHR tokens for providing reliable infrastructure
+        - **Chronara Fleet Integration**: Connects to 6 regional fleet nodes
+        - **Advanced QoS**: <50ms latency targets with dedicated bandwidth
+        - **Lightweight Architecture**: Minimal resource requirements
+        
+        ## 📦 Installation
+        
+        ### Snap Package (Recommended)
+        \`\`\`bash
+        sudo snap install chr-node
+        sudo snap start chr-node.service
+        \`\`\`
+        
+        ### Manual Installation
+        \`\`\`bash
+        # Download and extract
+        wget https://github.com/CG-8663/chr-node/releases/download/$TAG/${ARCHIVE_NAME}
+        tar -xzf ${ARCHIVE_NAME}
+        
+        # Run node
+        ./chr_node/bin/chr_node start
+        \`\`\`
+        
+        ## 🔧 Configuration
+        
+        ### Quick Setup
+        \`\`\`bash
+        # View configuration
+        sudo snap get chr-node
+        
+        # Set custom data directory
+        sudo snap set chr-node data-dir=/your/data/path
+        
+        # Set custom ports
+        sudo snap set chr-node rpc-port=8545
+        \`\`\`
+        
+        ### System Optimization
+        \`\`\`bash
+        # Enable TCP BBR for better performance
+        echo 'net.core.default_qdisc=fq' | sudo tee -a /etc/sysctl.conf
+        echo 'net.ipv4.tcp_congestion_control=bbr' | sudo tee -a /etc/sysctl.conf
+        sudo sysctl --system
+        \`\`\`
+        
+        ## 🌍 Community Benefits
+        
+        - **Network Rewards**: Earn CHR tokens for uptime and performance
+        - **Regional Impact**: Support P2P infrastructure in your area
+        - **Ecosystem Growth**: Help expand decentralized networking
+        - **Technical Experience**: Learn cutting-edge P2P technology
+        
+        ## 📊 System Requirements
+        
+        | Component | Minimum | Recommended |
+        |-----------|---------|-------------|
+        | **CPU** | 2 cores, 2.0GHz | 4+ cores, 3.0GHz+ |
+        | **Memory** | 4GB RAM | 8GB+ RAM |
+        | **Storage** | 20GB | 50GB+ SSD |
+        | **Network** | Stable internet | 100Mbps+ dedicated |
+        
+        ## 🔗 Network Integration
+        
+        Chr-nodes automatically connect to Chronara's fleet infrastructure:
+        
+        - 📍 **as1.fleet.chronara.net** (Tokyo, Japan)
+        - 📍 **as2.fleet.chronara.net** (Singapore)
+        - 📍 **us1.fleet.chronara.net** (New York, USA)
+        - 📍 **us2.fleet.chronara.net** (Los Angeles, USA)
+        - 📍 **eu1.fleet.chronara.net** (London, UK)
+        - 📍 **eu2.fleet.chronara.net** (Frankfurt, Germany)
+        
+        ## 📞 Support
+        
+        - **GitHub Issues**: [Report problems](https://github.com/CG-8663/chr-node/issues)
+        - **Community Forum**: [Join discussions](https://community.chronara.net)
+        - **Documentation**: [Complete guides](https://docs.chronara.net)
+        - **Discord**: Join the Chronara community server
+        
+        ## 🔐 Security Notes
+        
+        - Keep your node updated for latest security patches
+        - Monitor your node's performance and uptime
+        - Use strong passwords for wallet files
+        - Configure firewall rules appropriately
+        
+        ---
+        
+        **Join the decentralized future - Power the Chronara Network with your chr-node!**
+        
+        [Documentation](https://docs.chronara.net) • [Community](https://community.chronara.net) • [Rewards Program](https://chronara.net/rewards)
+        EOF
+    
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ env.TAG }}
+        name: Chr-Node ${{ env.TAG }}
+        body_path: release-notes.md
+        files: |
+          ${{ env.ARCHIVE_NAME }}
+          ${{ steps.snapcraft.outputs.snap }}
+        draft: false
+        prerelease: false
+        make_latest: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-snap:
+    runs-on: ubuntu-latest
+    needs: build-release
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Build Snap package
+      uses: snapcore/action-build@v1
+      id: snapcraft
+    
+    - name: Publish to Snap Store
+      uses: snapcore/action-publish@v1
+      env:
+        SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAP_STORE_LOGIN }}
+      with:
+        snap: ${{ steps.snapcraft.outputs.snap }}
+        release: stable

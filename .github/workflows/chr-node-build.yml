@@ -1,0 +1,164 @@
+name: Chr-Node Build & Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    
+    env:
+      MIX_ENV: test
+      
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: chr_node_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup Erlang/OTP and Elixir
+      uses: erlef/setup-beam@v1
+      with:
+        otp-version: '26.0'
+        elixir-version: '1.15.7'
+    
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          deps
+          _build
+        key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-mix-
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential git curl
+        sudo apt-get install -y libgmp3-dev libncurses-dev autoconf automake libtool
+    
+    - name: Install Elixir dependencies
+      run: |
+        mix local.hex --force
+        mix local.rebar --force
+        mix deps.get
+    
+    - name: Check formatting
+      run: mix format --check-formatted
+    
+    - name: Compile application
+      run: mix compile --warnings-as-errors
+    
+    - name: Run tests
+      run: |
+        export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/chr_node_test"
+        mix test --color
+    
+    - name: Run static analysis (Credo)
+      run: mix credo --only warning
+      continue-on-error: true
+    
+    - name: Generate documentation
+      run: mix docs
+    
+    - name: Build release
+      env:
+        MIX_ENV: prod
+      run: |
+        mix deps.get --only prod
+        mix release chr_node --overwrite
+    
+    - name: Test release binary
+      run: |
+        ./_build/prod/rel/chr_node/bin/chr_node version
+    
+    - name: Upload release artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: chr-node-linux-amd64
+        path: _build/prod/rel/chr_node/
+        retention-days: 7
+
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: build-test
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Erlang/OTP and Elixir
+      uses: erlef/setup-beam@v1
+      with:
+        otp-version: '26.0'
+        elixir-version: '1.15.7'
+    
+    - name: Install dependencies
+      run: |
+        mix local.hex --force
+        mix local.rebar --force
+        mix deps.get
+    
+    - name: Run security audit
+      run: |
+        mix deps.audit
+      continue-on-error: true
+    
+    - name: Run Dialyzer (type checking)
+      run: |
+        mix dialyzer --plt
+        mix dialyzer
+      continue-on-error: true
+
+  snap-build:
+    runs-on: ubuntu-latest
+    needs: build-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Build Snap package
+      uses: snapcore/action-build@v1
+      id: snapcraft
+    
+    - name: Upload Snap artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: chr-node-snap
+        path: ${{ steps.snapcraft.outputs.snap }}
+        retention-days: 30
+    
+    - name: Test Snap package
+      run: |
+        sudo snap install ${{ steps.snapcraft.outputs.snap }} --dangerous
+        sudo snap start chr-node.service
+        sleep 10
+        chr-node.info
+        sudo snap stop chr-node.service
+        sudo snap remove chr-node

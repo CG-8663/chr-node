@@ -1,5 +1,5 @@
-# Diode Server
-# Copyright 2021-2024 Diode
+# Chronara Node (chr-node) Configuration  
+# Copyright 2021-2024 Diode (original), 2025 Chronara (enhancements)
 # Licensed under the Diode License, Version 1.1
 import Config
 
@@ -26,8 +26,8 @@ if Mix.env() == :test do
   end
 end
 
-if Mix.env() != :test and File.exists?("config/diode.exs") do
-  import_config "diode.exs"
+if Mix.env() != :test and File.exists?("config/chronara.exs") do
+  import_config "chronara.exs"
 end
 
 config :exqlite, force_build: true

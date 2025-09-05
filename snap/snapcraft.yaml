@@ -1,21 +1,21 @@
-name: diode-node
-website: https://diode.io
-source-code: https://github.com/diodechain/diode_node
+name: chr-node
+website: https://chronara.net
+source-code: https://github.com/CG-8663/chr-node
 icon: snap/logo.png
 base: core24
-adopt-info: diode-node
-summary: Diode relay node
+adopt-info: chr-node
+summary: Chronara community lite node
 description: |
-  The Diode Network is a decentralized permissionless ZTNA network allowing 
-  any device in the network to communicate with any other device in the network
-  through always end-to-end encrypted channels. Hosting a Diode relay node extends
-  the network and is rewarded when the new diode relay node is used by other devices. 
+  The Chronara Network is a decentralized community-driven P2P infrastructure network
+  with multi-TLD support (.com, .net, .ai) and enhanced quality of service. Running a
+  chr-node supports the community ecosystem, provides essential P2P infrastructure,
+  and earns CHR token rewards for reliable service. Join the decentralized future! 
 
 grade: stable # must be 'stable' to release into candidate/stable channels
 confinement: strict # use 'strict' once you have the right plugs and slots
 
 parts:
-  diode-node:
+  chr-node:
     # See 'snapcraft plugins'
     plugin: make
     make-parameters: [-f snap/Makefile]
@@ -60,14 +60,14 @@ apps:
     plugs: [network, network-bind]
 
   flush:
-    command: bin/run elevated rpc Diode.Cmd.flush_cache
+    command: bin/run elevated rpc ChronaraNode.Cmd.flush_cache
     plugs: [network, network-bind]
 
   info:
-    command: bin/run rpc Diode.Cmd.status
+    command: bin/run rpc ChronaraNode.Cmd.status
     plugs: [network, network-bind]
 
   env:
-    command: bin/run elevated rpc Diode.Cmd.env
+    command: bin/run elevated rpc ChronaraNode.Cmd.env
     plugs: [network, network-bind]
 

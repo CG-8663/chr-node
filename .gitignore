@@ -37,6 +37,7 @@ erl_crash.dump
 .elixir_ls/
 clones
 config/diode.exs
+config/chronara.exs
 .history/
 evm/evm
 core
@@ -50,3 +51,8 @@ nodedata_prod/
 nodedata_test/
 supervise/
 .env
+
+# Chr-Node specific
+chr-node-data/
+chr-node-logs/
+*.chr.db

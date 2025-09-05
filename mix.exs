@@ -1,5 +1,5 @@
-# Diode Server
-# Copyright 2021-2024 Diode
+# Chronara Node (chr-node)
+# Copyright 2021-2024 Diode (original), 2025 Chronara (enhancements)
 # Licensed under the Diode License, Version 1.1
 
 if String.to_integer(System.otp_release()) < 25 do
@@ -7,10 +7,10 @@ if String.to_integer(System.otp_release()) < 25 do
   raise "incorrect OTP"
 end
 
-defmodule Diode.Mixfile do
+defmodule ChronaraNode.Mixfile do
   use Mix.Project
 
-  @url "https://github.com/diodechain/diode_node"
+  @url "https://github.com/CG-8663/chr-node"
 
   def project do
     {patches, description} =
@@ -26,10 +26,10 @@ defmodule Diode.Mixfile do
 
     [
       aliases: aliases(),
-      app: :diode,
+      app: :chronara_node,
       compilers: Mix.compilers(),
       deps: deps(),
-      description: "Diode Network Relay Node",
+      description: "Chronara Network Lite Node - Community P2P Infrastructure",
       dialyzer: [plt_add_apps: [:mix]],
       docs: docs(vsn),
       elixir: "~> 1.15",
@@ -37,7 +37,7 @@ defmodule Diode.Mixfile do
       elixirc_paths: elixirc_paths(Mix.env()),
       package: package(),
       releases: [
-        diode_node: [
+        chr_node: [
           applications: [runtime_tools: :permanent, ssl: :permanent],
           steps: [:assemble, :tar],
           version: vsn
@@ -55,7 +55,7 @@ defmodule Diode.Mixfile do
   defp elixirc_paths(_), do: ["lib"]
 
   def application do
-    [mod: {Diode, []}, extra_applications: [:logger, :observer, :runtime_tools]]
+    [mod: {ChronaraNode, []}, extra_applications: [:logger, :observer, :runtime_tools]]
   end
 
   defp aliases do
