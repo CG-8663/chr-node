@@ -10,19 +10,40 @@ const PORT = process.env.PORT || 3333;
 app.use(cors());
 app.use(express.static('public'));
 
-// Serve installation script directly from static files
+// Serve installation scripts directly from static files
 app.get('/scripts/termux-one-click-install.sh', (req, res) => {
-    const fs = require('fs');
-    const path = require('path');
-    
-    const scriptPath = path.join(__dirname, 'public', 'scripts', 'termux-one-click-install.sh');
+    const scriptPath = path.join(__dirname, 'public', 'termux-one-click-install.sh');
     
     if (fs.existsSync(scriptPath)) {
         res.setHeader('Content-Type', 'text/plain');
         res.setHeader('Content-Disposition', 'attachment; filename="termux-one-click-install.sh"');
         res.sendFile(scriptPath);
     } else {
-        res.status(404).send('Installation script not found');
+        res.status(404).send('Standard installation script not found');
+    }
+});
+
+app.get('/scripts/termux-install-with-build.sh', (req, res) => {
+    const scriptPath = path.join(__dirname, 'public', 'termux-install-with-build.sh');
+    
+    if (fs.existsSync(scriptPath)) {
+        res.setHeader('Content-Type', 'text/plain');
+        res.setHeader('Content-Disposition', 'attachment; filename="termux-install-with-build.sh"');
+        res.sendFile(scriptPath);
+    } else {
+        res.status(404).send('Build pipeline installation script not found');
+    }
+});
+
+app.get('/scripts/termux-master-dev-install.sh', (req, res) => {
+    const scriptPath = path.join(__dirname, 'public', 'scripts', 'termux-master-dev-install.sh');
+    
+    if (fs.existsSync(scriptPath)) {
+        res.setHeader('Content-Type', 'text/plain');
+        res.setHeader('Content-Disposition', 'attachment; filename="termux-master-dev-install.sh"');
+        res.sendFile(scriptPath);
+    } else {
+        res.status(404).send('Master development installation script not found');
     }
 });
 app.use(express.json());
@@ -430,9 +451,33 @@ app.get('/', (req, res) => {
         <div class="logo">🌐</div>
         <h1>chr-node</h1>
         <p class="subtitle">
-            One-Click Mobile Installation<br>
-            Join the Chronara Network and start earning CHAI tokens
+            Mobile P2P Network Infrastructure for Emerging Markets<br>
+            Transform your Android device into a powerful blockchain node with NFT-gated AI capabilities
         </p>
+
+        <div style="background: #e8f4fd; padding: 25px; border-radius: 15px; margin: 30px 0; text-align: left;">
+            <h3 style="text-align: center; color: #333; margin-bottom: 20px;">🚀 What is chr-node?</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                <div>
+                    <h4>📱 Mobile-First Architecture</h4>
+                    <p>Deploy P2P infrastructure on any Android device via Termux with ultra-lightweight design for 1GB RAM devices.</p>
+                </div>
+                <div>
+                    <h4>🔐 NFT-Gated Access</h4>
+                    <p>Tiered feature access based on Chronara Node Pass NFT ownership (Basic/Standard/Premium levels).</p>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <h4>🤖 AI Integration</h4>
+                    <p>Gemini and Claude AI agents for personalized assistance, trading insights, and NFT intelligence.</p>
+                </div>
+                <div>
+                    <h4>🌍 Emerging Markets Focus</h4>
+                    <p>Democratize P2P network participation by making blockchain infrastructure accessible on mobile devices globally.</p>
+                </div>
+            </div>
+        </div>
 
         <div class="stats" id="stats">
             <div class="stat">
@@ -463,33 +508,53 @@ app.get('/', (req, res) => {
         <div class="install-section">
             <h3>Choose Your Installation Method:</h3>
             
-            <a href="/install" class="install-button" onclick="trackInstall('direct')">
-                📱 Download Install Script
-            </a>
+            <div style="margin: 20px 0;">
+                <h4>🚀 Standard Install (Fixed Web Interface)</h4>
+                <p style="color: #666; margin-bottom: 15px;">Complete chr-node installation with fixed web interface startup</p>
+                <a href="/scripts/termux-one-click-install.sh" class="install-button" onclick="trackInstall('standard')">
+                    📱 Download Standard Script
+                </a>
+                <button class="install-button secondary" onclick="copyCommand('standard')">
+                    📋 Copy Standard Command
+                </button>
+            </div>
             
-            <button class="install-button secondary" onclick="copyCommand()">
-                📋 Copy Command
-            </button>
+            <div style="margin: 30px 0; padding: 20px; background: #e8f4fd; border-radius: 10px;">
+                <h4>🔨 Build Pipeline Install (Recommended for Testing)</h4>
+                <p style="color: #666; margin-bottom: 15px;">Compile chr-node + diode client from source with platform optimization</p>
+                <a href="/scripts/termux-install-with-build.sh" class="install-button" onclick="trackInstall('build')">
+                    📱 Download Build Script
+                </a>
+                <button class="install-button secondary" onclick="copyCommand('build')">
+                    📋 Copy Build Command
+                </button>
+            </div>
             
-            <button class="install-button" onclick="showQR()">
-                📲 Show QR Code
-            </button>
+            <div style="margin: 30px 0; padding: 20px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 10px;">
+                <h4>🔧 Master Development Install (SSH Auth Required)</h4>
+                <p style="color: #666; margin-bottom: 15px;"><strong>For Developers:</strong> Build, test, and publish binaries back to repository with SSH authentication</p>
+                <a href="/scripts/termux-master-dev-install.sh" class="install-button" onclick="trackInstall('master-dev')" style="background: linear-gradient(45deg, #ff6b6b, #ee5a24);">
+                    🔧 Download Master Dev Script
+                </a>
+                <button class="install-button secondary" onclick="copyCommand('master-dev')">
+                    📋 Copy Master Dev Command
+                </button>
+                <div style="margin-top: 15px; padding: 15px; background: rgba(255,193,7,0.1); border-radius: 8px;">
+                    <small><strong>⚠️ Requirements:</strong> GitHub CLI authentication, SSH keys configured, push access to CG-8663/chr-node repository</small>
+                </div>
+            </div>
+            
         </div>
 
         <div class="command-box" id="commandBox" style="display:none;">
             <button class="copy-button" onclick="copyToClipboard()">Copy</button>
-            <code id="installCommand">curl -L https://chr-node.network/install | bash</code>
+            <code id="installCommand">curl -L http://localhost:3334/scripts/termux-one-click-install.sh | bash</code>
         </div>
 
         <div class="success-message" id="successMessage">
             <strong>✅ Ready to install!</strong> Open Termux and paste the command.
         </div>
 
-        <div class="qr-section" id="qrSection">
-            <h3>📲 Scan with your Android device:</h3>
-            <div id="qrCode" style="text-align: center; margin: 20px 0;"></div>
-            <p><small>This QR code contains the installation URL</small></p>
-        </div>
 
         <div class="steps">
             <h3>Installation Steps:</h3>
@@ -572,14 +637,32 @@ app.get('/', (req, res) => {
             }
         }
 
-        function copyCommand() {
+        let currentInstallType = 'standard';
+        
+        function copyCommand(type = 'standard') {
+            currentInstallType = type;
             const commandBox = document.getElementById('commandBox');
+            const commandElement = document.getElementById('installCommand');
+            
+            let command;
+            if (type === 'build') {
+                command = 'curl -L ' + window.location.origin + '/scripts/termux-install-with-build.sh | bash';
+                commandElement.textContent = command;
+            } else if (type === 'master-dev') {
+                command = 'curl -L ' + window.location.origin + '/scripts/termux-master-dev-install.sh | bash';
+                commandElement.textContent = command;
+            } else {
+                command = 'curl -L ' + window.location.origin + '/scripts/termux-one-click-install.sh | bash';
+                commandElement.textContent = command;
+            }
+            
             commandBox.style.display = 'block';
             copyToClipboard();
         }
 
         function copyToClipboard() {
-            const command = 'curl -L ' + window.location.origin + '/install | bash';
+            const commandElement = document.getElementById('installCommand');
+            const command = commandElement.textContent;
             
             if (navigator.clipboard) {
                 navigator.clipboard.writeText(command).then(() => {
@@ -604,46 +687,6 @@ app.get('/', (req, res) => {
             }, 5000);
         }
 
-        function showQR() {
-            const qrSection = document.getElementById('qrSection');
-            const qrDiv = document.getElementById('qrCode');
-            
-            qrSection.style.display = 'block';
-            
-            // Create the install command instead of just URL
-            const installCommand = 'curl -L ' + window.location.origin + '/install | bash';
-            
-            // Clear previous QR code
-            qrDiv.innerHTML = '';
-            
-            // Create a canvas element
-            const canvas = document.createElement('canvas');
-            canvas.style.border = '1px solid #ddd';
-            canvas.style.borderRadius = '10px';
-            qrDiv.appendChild(canvas);
-            
-            // Generate QR code
-            QRCode.toCanvas(canvas, installCommand, {
-                width: 200,
-                margin: 2,
-                color: {
-                    dark: '#000000',
-                    light: '#FFFFFF'
-                }
-            }, function (error) {
-                if (error) {
-                    console.error('QR Code generation error:', error);
-                    qrDiv.innerHTML = '<p style="color: red;">QR Code generation failed. Please use the copy command method.</p>';
-                } else {
-                    console.log('QR Code generated successfully');
-                }
-            });
-            
-            // Add text below QR code
-            const textDiv = document.createElement('div');
-            textDiv.innerHTML = '<p style="margin-top: 15px; font-size: 14px; color: #666;">Scan this QR code with your Android device, then paste the command in Termux</p>';
-            qrDiv.appendChild(textDiv);
-        }
 
         function trackInstall(method) {
             // Track installation method for analytics

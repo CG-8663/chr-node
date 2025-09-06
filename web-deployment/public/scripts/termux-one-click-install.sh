@@ -16,7 +16,7 @@ WHITE='\033[1;37m'
 NC='\033[0m' # No Color
 
 # Configuration
-CHR_NODE_VERSION="v1.0.0"
+CHR_NODE_VERSION="v1.0.0-beta"
 GITHUB_REPO="https://github.com/CG-8663/chr-node"
 CHR_NODE_DIR="$HOME/.chr-node"
 INSTALL_LOG="$HOME/chr-node-install.log"
@@ -25,6 +25,10 @@ NODE_NAME="chr-node-$(date +%s)"
 # Logging function
 log() {
     echo -e "${GREEN}[$(date +'%Y-%m-%d %H:%M:%S')] $1${NC}" | tee -a "$INSTALL_LOG"
+}
+
+log_info() {
+    echo -e "${BLUE}[$(date +'%Y-%m-%d %H:%M:%S')] INFO: $1${NC}" | tee -a "$INSTALL_LOG"
 }
 
 log_warn() {
@@ -194,13 +198,13 @@ download_chr_node() {
     
     case "$arch" in
         aarch64|arm64)
-            binary_name="chr-node-android-arm64"
+            binary_name="chr-node-linux-arm64"
             ;;
         armv7l)
-            binary_name="chr-node-android-armv7"
+            binary_name="chr-node-linux-armv7"
             ;;
         x86_64)
-            binary_name="chr-node-android-x64"
+            binary_name="chr-node-linux-x86_64"
             ;;
         *)
             log_error "Unsupported architecture: $arch"
@@ -451,7 +455,7 @@ PID_FILE="$CHR_NODE_DIR/chr-node.pid"
 WEB_PID_FILE="$CHR_NODE_DIR/web.pid"
 
 start_chr_node() {
-    echo "🚀 Starting chr-node..."
+    echo "🚀 Starting chr-node services..."
     
     if [ -f "$PID_FILE" ]; then
         if kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
@@ -463,33 +467,76 @@ start_chr_node() {
     fi
     
     # Start chr-node service
+    echo "Starting chr-node..."
     nohup "$CHR_NODE_BIN" --config "$CHR_NODE_CONFIG" \
         > "$CHR_NODE_LOGS/chr-node.log" 2>&1 &
     
     echo $! > "$PID_FILE"
     echo "chr-node started (PID: $!)"
     
-    # Start web interface
-    cd "$CHR_NODE_DIR/web"
-    if [ -f "package.json" ]; then
-        nohup npm start > "$CHR_NODE_LOGS/web.log" 2>&1 &
-        echo $! > "$WEB_PID_FILE"
-        echo "Web interface started (PID: $!)"
+    # Start web interface - ensure we're in the right directory and files exist
+    if [ -d "$CHR_NODE_DIR/web" ]; then
+        cd "$CHR_NODE_DIR/web"
+        if [ -f "package.json" ] && [ -f "server.js" ]; then
+            echo "Starting web interface..."
+            nohup npm start > "$CHR_NODE_LOGS/web.log" 2>&1 &
+            echo $! > "$WEB_PID_FILE"
+            echo "Web interface started (PID: $!)"
+        else
+            echo "⚠️ Web interface files not found, attempting to create them..."
+            # Try to set up web interface if missing
+            setup_web_interface_minimal
+            if [ -f "server.js" ]; then
+                nohup npm start > "$CHR_NODE_LOGS/web.log" 2>&1 &
+                echo $! > "$WEB_PID_FILE"
+                echo "Web interface started (PID: $!)"
+            fi
+        fi
+    else
+        echo "⚠️ Web directory not found"
     fi
     
-    sleep 2
+    sleep 3
+    
+    # Verify services are actually running
+    echo "Verifying services..."
+    local services_running=0
+    
+    if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
+        echo "✅ chr-node service: Running"
+        services_running=$((services_running + 1))
+    else
+        echo "❌ chr-node service: Failed to start"
+    fi
+    
+    if [ -f "$WEB_PID_FILE" ] && kill -0 "$(cat "$WEB_PID_FILE")" 2>/dev/null; then
+        echo "✅ Web interface: Running"
+        services_running=$((services_running + 1))
+    else
+        echo "❌ Web interface: Failed to start"
+        if [ -f "$CHR_NODE_LOGS/web.log" ]; then
+            echo "Web interface error log:"
+            tail -5 "$CHR_NODE_LOGS/web.log"
+        fi
+    fi
     
     # Show access information
     echo ""
-    echo "✅ chr-node is running!"
-    echo "🌐 Web Interface: http://localhost:3000"
-    local_ip=$(ip route get 1 2>/dev/null | awk '{print $7; exit}' || echo "unknown")
-    if [ "$local_ip" != "unknown" ]; then
-        echo "📱 Mobile Access: http://$local_ip:3000"
+    if [ $services_running -gt 0 ]; then
+        echo "✅ chr-node services are running!"
+        echo "🌐 Web Interface: http://localhost:3000"
+        local_ip=$(ip route get 1 2>/dev/null | awk '{print $7; exit}' || echo "unknown")
+        if [ "$local_ip" != "unknown" ]; then
+            echo "📱 Mobile Access: http://$local_ip:3000"
+        fi
+        echo "📊 API Endpoint: http://localhost:8080"
+    else
+        echo "❌ No services started successfully"
     fi
-    echo "📊 API Endpoint: http://localhost:8080"
     echo ""
-    echo "View logs: tail -f $CHR_NODE_LOGS/chr-node.log"
+    echo "View logs:"
+    echo "- chr-node: tail -f $CHR_NODE_LOGS/chr-node.log"
+    echo "- web: tail -f $CHR_NODE_LOGS/web.log"
 }
 
 stop_chr_node() {
@@ -626,6 +673,7 @@ setup_web_interface() {
 EOF
 
     # Install web dependencies
+    log_info "Installing web interface dependencies..."
     npm install 2>&1 | tee -a "$INSTALL_LOG"
     
     # Create basic web server
@@ -702,6 +750,65 @@ EOF
 
     log "Web interface setup complete ✅"
     echo ""
+}
+
+# Minimal web interface setup (fallback function)
+setup_web_interface_minimal() {
+    echo "Setting up minimal web interface..."
+    
+    # Create package.json if missing
+    if [ ! -f "package.json" ]; then
+        cat > package.json << 'EOF'
+{
+  "name": "chr-node-interface",
+  "version": "1.0.0",
+  "description": "chr-node Web Interface",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
+EOF
+    fi
+    
+    # Install dependencies if needed
+    if [ ! -d "node_modules" ]; then
+        npm install express 2>/dev/null || pkg install nodejs && npm install express
+    fi
+    
+    # Create minimal server if missing
+    if [ ! -f "server.js" ]; then
+        cat > server.js << 'EOF'
+const express = require('express');
+const app = express();
+const PORT = 3000;
+
+app.get('/', (req, res) => {
+    res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head><title>chr-node</title><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+    <body style="font-family:Arial,sans-serif;text-align:center;padding:50px;">
+        <h1>🌐 chr-node</h1>
+        <h2>Chronara Network Node</h2>
+        <div style="background:#e8f5e8;padding:20px;border-radius:10px;margin:20px 0;">
+            <h3>✅ Node Online</h3>
+            <p>Your chr-node is running successfully!</p>
+        </div>
+        <p>Web interface is operational.</p>
+    </body>
+    </html>
+    `);
+});
+
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`chr-node web interface running on port ${PORT}`);
+});
+EOF
+    fi
 }
 
 # Setup Termux API integration
