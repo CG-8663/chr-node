@@ -182,13 +182,13 @@ config :chronara_node,
 
 ## 🏆 Reward System Configuration
 
-### CHR Token Rewards
+### CHAI Token Rewards
 
 ```elixir
 # config/chronara.exs
 config :chronara_node,
   rewards_config: [
-    # Reward wallet address (where CHR tokens are sent)
+    # Reward wallet address (where CHAI tokens are sent)
     reward_address: System.get_env("REWARD_ADDRESS"),
     
     # Reward tracking
@@ -205,7 +205,7 @@ config :chronara_node,
     
     # Reward calculation intervals
     reward_interval: 3600_000,    # Hourly (1 hour in ms)
-    payout_threshold: 10.0        # Minimum CHR tokens before payout
+    payout_threshold: 10.0        # Minimum CHAI tokens before payout
   ]
 ```
 

@@ -153,7 +153,7 @@ sudo systemctl enable snap.chr-node.service.service
 ## 🎯 **Community Participation**
 
 ### **Node Operation Benefits**
-- **Network Rewards**: Earn CHR tokens for reliable service
+- **Network Rewards**: Earn CHAI tokens for reliable service
 - **Community Recognition**: Build reputation in the Chronara ecosystem
 - **Network Growth**: Support global P2P infrastructure expansion
 - **Technical Learning**: Gain experience with cutting-edge P2P technology
@@ -201,7 +201,7 @@ Regional Fleet Nodes:
 - **Moonbeam Monitoring**: Cross-chain compatibility
 - **Smart Contracts**: Fleet registry, BNS, and rewards contracts
 - **Wallet Integration**: Secure key management and transactions
-- **Token Economics**: CHR token rewards and staking
+- **Token Economics**: CHAI token rewards and staking
 
 ### **Development Stack**
 - **Elixir/OTP**: High-concurrency, fault-tolerant runtime

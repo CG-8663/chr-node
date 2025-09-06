@@ -164,7 +164,7 @@ Content-Type: application/json
 - `chr_node_info`: Node status and information
 - `peer_list`: Connected peer information
 - `network_stats`: Performance metrics
-- `reward_status`: CHR token earning information
+- `reward_status`: CHAI token earning information
 - `fleet_status`: Connection status to Chronara fleet
 
 ### 3. Data Persistence Layer
@@ -271,7 +271,7 @@ Cryptographic proof system for access control and monetization:
 2. **Signature Validation**: Verify cryptographic signature
 3. **Fleet Authorization**: Confirm fleet node permission
 4. **Usage Tracking**: Monitor bandwidth consumption
-5. **Payment Verification**: Validate CHR token payment
+5. **Payment Verification**: Validate CHAI token payment
 
 ### 5. Security Architecture
 

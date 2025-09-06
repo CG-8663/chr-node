@@ -84,11 +84,12 @@ defmodule ChronaraNode do
     opts = [strategy: :rest_for_one, name: ChronaraNode.Supervisor]
     result = Supervisor.start_link(children, opts)
 
-    if result != {:ok, _pid} do
-      Logger.error("Failed to start ChronaraNode: #{inspect(result)}")
-    else
-      Logger.info("🚀 Chronara Node started successfully - Community P2P Infrastructure")
-      Logger.info("🔗 Connected to Chronara Network: #{chronara_network_info()}")
+    case result do
+      {:ok, _pid} ->
+        Logger.info("🚀 Chronara Node started successfully - Community P2P Infrastructure")
+        Logger.info("🔗 Connected to Chronara Network: #{chronara_network_info()}")
+      error ->
+        Logger.error("Failed to start ChronaraNode: #{inspect(error)}")
     end
 
     result
@@ -98,18 +99,7 @@ defmodule ChronaraNode do
     "fleet.chronara.net (6 regional nodes)"
   end
 
-  # Legacy Diode compatibility - delegate to ChronaraNode functions
-  defdelegate data_dir(), to: ChronaraNode
-  defdelegate data_dir(file), to: ChronaraNode
-  defdelegate wallet(), to: ChronaraNode
-  defdelegate node_address(), to: ChronaraNode
-  defdelegate miner(), to: ChronaraNode
-  defdelegate self(), to: ChronaraNode
-  defdelegate blockhash(), to: ChronaraNode
-  defdelegate ticket(), to: ChronaraNode
-  defdelegate serverid(), to: ChronaraNode
-  defdelegate address(), to: ChronaraNode
-  defdelegate puts(msg), to: ChronaraNode
+  # Legacy Diode compatibility functions are implemented directly below
 
   # ChronaraNode-specific functions
   def data_dir() do
@@ -155,7 +145,7 @@ defmodule ChronaraNode do
     end)
   end
 
-  def self() do
+  def node_self() do
     node_address() |> Hash.to_address()
   end
 
@@ -168,11 +158,11 @@ defmodule ChronaraNode do
   end
 
   def serverid() do
-    Hash.sha3_256("CHR-NODE:" <> Hash.to_hex(self())) |> DiodeClient.Base16.encode()
+    Hash.sha3_256("CHR-NODE:" <> Hash.to_hex(node_self())) |> DiodeClient.Base16.encode()
   end
 
   def address() do
-    self()
+    node_self()
   end
 
   def puts(msg) when is_binary(msg) do

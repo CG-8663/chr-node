@@ -1,0 +1,33 @@
+{
+  "name": "chr-node-installer",
+  "version": "1.0.0",
+  "description": "chr-node One-Click Installation Server",
+  "main": "install-server.js",
+  "scripts": {
+    "start": "node install-server.js",
+    "dev": "nodemon install-server.js",
+    "test": "node test-server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "qrcode": "^1.5.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": [
+    "blockchain",
+    "mobile",
+    "termux",
+    "android",
+    "p2p",
+    "installation"
+  ],
+  "author": "Chronara Network",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CG-8663/chr-node.git"
+  }
+}

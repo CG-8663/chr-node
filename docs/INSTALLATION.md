@@ -137,7 +137,7 @@ export FLEET_ADDR="fleet.chronara.net"    # Fleet server address
 # Advanced configuration
 export CHR_NODE_NAME="my-chr-node"        # Custom node identifier
 export LOG_LEVEL="info"                   # Logging level
-export REWARD_ADDRESS="0x..."             # CHR token reward address
+export REWARD_ADDRESS="0x..."             # CHAI token reward address
 ```
 
 ### Configuration File
@@ -435,7 +435,7 @@ After successful installation:
 1. **[Configure Your Node](CONFIGURATION.md)** - Advanced configuration options
 2. **[Monitor Performance](MONITORING.md)** - Set up monitoring and alerts
 3. **[Join Community](https://community.chronara.net)** - Connect with other operators
-4. **[Track Rewards](https://rewards.chronara.net)** - Monitor your CHR token earnings
+4. **[Track Rewards](https://rewards.chronara.net)** - Monitor your CHAI token earnings
 
 ## 📞 Support
 
