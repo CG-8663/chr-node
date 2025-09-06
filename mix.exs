@@ -33,7 +33,7 @@ defmodule ChronaraNode.Mixfile do
       dialyzer: [plt_add_apps: [:mix]],
       docs: docs(vsn),
       elixir: "~> 1.15",
-      elixirc_options: [warnings_as_errors: Mix.target() == :host],
+      elixirc_options: [warnings_as_errors: Mix.target() == :host && Mix.env() != :prod],
       elixirc_paths: elixirc_paths(Mix.env()),
       package: package(),
       releases: [

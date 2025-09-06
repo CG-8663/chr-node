@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# chr-node Development Mock Binary
+# This is a development mock for testing installation flows
+
+echo "[chr-node-dev] Development/Testing Binary"
+echo "Version: $(date +%Y.%m.%d)-dev"
+echo "Platform: $(uname -m)"
+echo "OS: $(uname -s)"
+
+case "$1" in
+    --version)
+        echo "chr-node development build $(date +%Y%m%d)"
+        exit 0
+        ;;
+    --help)
+        echo "chr-node - Chronara Network Lite Node"
+        echo ""
+        echo "Usage:"
+        echo "  chr-node [options]"
+        echo ""
+        echo "Options:"
+        echo "  --version    Show version information"
+        echo "  --help       Show this help message"
+        echo "  --config     Specify configuration file"
+        echo "  --data-dir   Specify data directory"
+        echo ""
+        echo "This is a development mock binary for testing."
+        exit 0
+        ;;
+    *)
+        echo "Starting chr-node development mock..."
+        echo "Configuration directory: $HOME/.chr-node"
+        echo "Data directory: $HOME/.chr-node/data"
+        echo "Logs directory: $HOME/.chr-node/logs"
+        echo ""
+        echo "Mock node running... (press Ctrl+C to stop)"
+        
+        # Create log entry
+        LOG_DIR="$HOME/.chr-node/logs"
+        mkdir -p "$LOG_DIR"
+        echo "[$(date)] chr-node development mock started" >> "$LOG_DIR/chr-node.log"
+        
+        # Simulate running node
+        while true; do
+            echo "[$(date)] Mock node heartbeat - peers: 3, blocks: $(date +%s)"
+            sleep 30
+        done
+        ;;
+esac

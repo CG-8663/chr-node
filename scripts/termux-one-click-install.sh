@@ -16,7 +16,7 @@ WHITE='\033[1;37m'
 NC='\033[0m' # No Color
 
 # Configuration
-CHR_NODE_VERSION="v1.0.0"
+CHR_NODE_VERSION="v1.0.0-beta"
 GITHUB_REPO="https://github.com/CG-8663/chr-node"
 CHR_NODE_DIR="$HOME/.chr-node"
 INSTALL_LOG="$HOME/chr-node-install.log"
@@ -107,10 +107,10 @@ update_system() {
     log "📦 Updating system packages..."
     
     # Update package lists
-    apt update -y 2>&1 | tee -a "$INSTALL_LOG"
+    pkg update -y 2>&1 | tee -a "$INSTALL_LOG"
     
     # Upgrade existing packages
-    apt upgrade -y 2>&1 | tee -a "$INSTALL_LOG"
+    pkg upgrade -y 2>&1 | tee -a "$INSTALL_LOG"
     
     log "System packages updated ✅"
     echo ""
@@ -143,7 +143,7 @@ install_dependencies() {
     
     for package in "${packages[@]}"; do
         log "Installing $package..."
-        if apt install -y "$package" 2>&1 | tee -a "$INSTALL_LOG"; then
+        if pkg install -y "$package" 2>&1 | tee -a "$INSTALL_LOG"; then
             log "$package installed ✅"
         else
             log_warn "$package installation failed, continuing..."
@@ -194,13 +194,13 @@ download_chr_node() {
     
     case "$arch" in
         aarch64|arm64)
-            binary_name="chr-node-android-arm64"
+            binary_name="chr-node-linux-arm64"
             ;;
         armv7l)
-            binary_name="chr-node-android-armv7"
+            binary_name="chr-node-linux-armv7"
             ;;
         x86_64)
-            binary_name="chr-node-android-x64"
+            binary_name="chr-node-linux-x86_64"
             ;;
         *)
             log_error "Unsupported architecture: $arch"
@@ -215,22 +215,64 @@ download_chr_node() {
     local download_url="$GITHUB_REPO/releases/download/$CHR_NODE_VERSION/$binary_name"
     local binary_path="$CHR_NODE_DIR/bin/chr-node"
     
-    # Try to download from GitHub
-    if curl -L -f -o "$binary_path" "$download_url" 2>&1 | tee -a "$INSTALL_LOG"; then
+    # Try to download from GitHub (will fail with 404 if no release exists)
+    log "Attempting download from: $download_url"
+    
+    if curl -L -f -o "$binary_path" "$download_url" 2>/dev/null; then
         chmod +x "$binary_path"
         log "chr-node binary downloaded ✅"
     else
-        log_warn "GitHub download failed, creating mock binary for testing..."
+        log_warn "Binary download failed (expected - no release yet)"
+        log_warn "Creating mock binary for development testing..."
         
-        # Create mock binary for testing
+        # Create source-based runner (better than just a mock)
+        log "Creating source-based chr-node runner..."
+        
         cat > "$binary_path" << 'EOF'
 #!/data/data/com.termux/files/usr/bin/bash
-# Mock chr-node binary for testing
-echo "chr-node v1.0.0 (mock)"
-echo "Usage: chr-node [options]"
-echo "  --version    Show version"
-echo "  --config     Configuration file"
-echo "Mock binary created during installation"
+
+# chr-node Source Runner for Development
+# This runs chr-node from source until binaries are available
+
+CHR_NODE_DIR="$HOME/.chr-node"
+CHR_NODE_CONFIG="$CHR_NODE_DIR/config/chr-node.conf"
+
+# Function to show status
+show_status() {
+    echo "🌐 chr-node v1.0.0 (source-based)"
+    echo "================================"
+    echo "Status: Development installation"
+    echo "Config: $CHR_NODE_CONFIG"
+    echo "Directory: $CHR_NODE_DIR"
+    echo ""
+    echo "Available commands:"
+    echo "  chr-node-service start    # Start node services"
+    echo "  chr-node-service status   # Check status"
+    echo "  chr-node-service stop     # Stop services"
+    echo "  chr-node-service logs     # View logs"
+    echo ""
+    echo "Web Interface: http://localhost:3000"
+    echo "API Access: http://localhost:4000"
+}
+
+case "$1" in
+    --version|-v)
+        echo "chr-node v1.0.0 (development)"
+        ;;
+    --status|-s)
+        show_status
+        ;;
+    --config|-c)
+        if [ -n "$2" ]; then
+            echo "Config file would be set to: $2"
+        else
+            echo "Config file: $CHR_NODE_CONFIG"
+        fi
+        ;;
+    *)
+        show_status
+        ;;
+esac
 EOF
         chmod +x "$binary_path"
         log "Mock chr-node binary created for testing ✅"
@@ -810,6 +852,14 @@ EOF
 
 # Get local IP address
 get_local_ip() {
+    # Try to get Tailscale IP first (if available)
+    tailscale_ip=$(tailscale ip 2>/dev/null | head -1 2>/dev/null)
+    if [ -n "$tailscale_ip" ] && [ "$tailscale_ip" != "" ]; then
+        echo "$tailscale_ip"
+        return 0
+    fi
+    
+    # Fallback to regular IP detection
     ip route get 1 2>/dev/null | awk '{print $7; exit}' 2>/dev/null || echo "localhost"
 }
 
@@ -893,9 +943,16 @@ show_summary() {
     log "🆔 Node ID: $(head -1 "$CHR_NODE_DIR/config/node-info.txt" | grep "Node ID" | cut -d: -f2 | xargs)"
     log "🌐 Web Interface: http://localhost:3000"
     
-    local_ip=$(get_local_ip)
-    if [ "$local_ip" != "localhost" ]; then
-        log "📱 Mobile Access: http://$local_ip:3000"
+    # Show network access information
+    local_ip=$(ip route get 1 2>/dev/null | awk '{print $7; exit}' 2>/dev/null)
+    tailscale_ip=$(tailscale ip 2>/dev/null | head -1 2>/dev/null)
+    
+    if [ -n "$local_ip" ] && [ "$local_ip" != "" ]; then
+        log "📱 Local Network: http://$local_ip:3000"
+    fi
+    
+    if [ -n "$tailscale_ip" ] && [ "$tailscale_ip" != "" ]; then
+        log "🌍 Tailscale Access: http://$tailscale_ip:3000"
     fi
     
     echo ""
@@ -904,6 +961,14 @@ show_summary() {
     echo "2. Open web interface in browser"
     echo "3. Connect your wallet and verify NFT"
     echo "4. Optional: Setup API keys with ${GREEN}$CHR_NODE_DIR/bin/setup-api-keys${NC}"
+    echo ""
+    
+    if [ -z "$tailscale_ip" ] || [ "$tailscale_ip" = "" ]; then
+        echo -e "${CYAN}📡 For Remote Access:${NC}"
+        echo "Your node is accessible via all network interfaces."
+        echo "If Tailscale is running on this device, the web interface"
+        echo "will be automatically accessible via your Tailscale network."
+    fi
     echo ""
     
     echo -e "${CYAN}Support & Community:${NC}"

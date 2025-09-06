@@ -1,0 +1,84 @@
+# BMad Project Review Workflow
+# Comprehensive review workflow for chr-node release readiness
+
+workflow_id: "project-review"
+workflow_name: "Project Review & Release Approval"
+version: "4.42.1"
+project_type: "mobile-p2p-infrastructure"
+
+description: |
+  Comprehensive review workflow to assess chr-node project readiness
+  for production release, including technical, business, and operational aspects.
+
+phases:
+  - phase: "technical_review"
+    name: "Technical Architecture & Quality Review"
+    agent: "architect"
+    dependencies: []
+    deliverables:
+      - "Architecture review report"
+      - "Technical debt assessment"
+      - "Performance analysis"
+      - "Security assessment"
+    
+  - phase: "qa_assessment"
+    name: "Quality Assurance Assessment"
+    agent: "qa"
+    dependencies: ["technical_review"]
+    deliverables:
+      - "Test coverage report"
+      - "Quality metrics analysis"
+      - "Release readiness checklist"
+      - "Risk assessment"
+    
+  - phase: "product_validation"
+    name: "Product & Business Validation"
+    agent: "po"
+    dependencies: ["qa_assessment"]
+    deliverables:
+      - "Business value assessment"
+      - "Market readiness report"
+      - "Community feedback summary"
+      - "Go-to-market strategy"
+    
+  - phase: "project_coordination"
+    name: "Project Coordination & Final Review"
+    agent: "pm"
+    dependencies: ["product_validation"]
+    deliverables:
+      - "Project status report"
+      - "Risk mitigation plan"
+      - "Release timeline"
+      - "Final approval recommendation"
+
+quality_gates:
+  - gate: "architecture_approved"
+    phase: "technical_review"
+    criteria: ["security_validated", "performance_acceptable", "scalability_confirmed"]
+    
+  - gate: "quality_validated"
+    phase: "qa_assessment"
+    criteria: ["test_coverage_adequate", "critical_issues_resolved", "mobile_compatibility_verified"]
+    
+  - gate: "product_ready"
+    phase: "product_validation"
+    criteria: ["business_value_confirmed", "market_fit_validated", "documentation_complete"]
+    
+  - gate: "release_approved"
+    phase: "project_coordination"
+    criteria: ["all_gates_passed", "risks_mitigated", "timeline_confirmed"]
+
+success_criteria:
+  - All quality gates passed
+  - No critical issues remaining
+  - Documentation complete
+  - Installation system verified
+  - Performance benchmarks met
+  - Security audit passed
+  - Mobile compatibility confirmed
+  - Community feedback positive
+
+workflow_status: "ready"
+current_phase: null
+started_date: null
+completion_date: null

@@ -1,0 +1,23 @@
+chr-node Test Package
+====================
+
+Created: Sat Sep  6 17:15:55 PST 2025
+Directory: /Volumes/BACKUPDISK/nodefirstgen/chr-node
+Git Commit: 7c1f0db995e6b1b9ccd62352062e70e1b3724fe4
+Git Branch: main
+
+Files Included:
+- termux-one-click-install.sh (    1011 lines)
+- simple-server.py (Local web server)
+- README.md (Testing instructions)
+- quick-test.sh (Quick validation)
+- PACKAGE-INFO.txt (This file)
+
+Purpose:
+This package enables testing chr-node installation while the repository
+is private. Use local file copying or local web server for testing.
+
+When ready for public release:
+1. Make repository public: gh repo edit --visibility public
+2. Create release: gh release create v1.0.0
+3. Users install with: curl -L https://raw.githubusercontent.com/USER/REPO/main/scripts/termux-one-click-install.sh | bash

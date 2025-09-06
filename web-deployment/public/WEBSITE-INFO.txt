@@ -1,0 +1,34 @@
+chr-node Public Website
+======================
+
+This website serves the chr-node installation system for remote Termux deployments.
+
+Installation Commands:
+- Main install: curl -L YOUR_DOMAIN/install | bash
+- Direct script: curl -L YOUR_DOMAIN/scripts/termux-one-click-install.sh | bash
+
+Available Endpoints:
+- / - Main landing page with QR codes and installation instructions
+- /install - One-click installation script
+- /scripts/termux-one-click-install.sh - Direct script download
+- /api/health - Health check endpoint
+- /api/stats - Installation statistics
+
+Files Included:
+- Installation script (     946 lines)
+- Complete documentation set
+- Alternative installation methods
+- Test utilities
+
+Created: Sat Sep  6 17:15:10 PST 2025
+Version: chr-node v1.0.0
+
+Deployment Instructions:
+1. Upload entire web-deployment directory to hosting service
+2. Install dependencies: npm install
+3. Start server: npm start (or node install-server.js)
+4. Update domain references in HTML if needed
+5. Test all endpoints before announcing
+
+Repository remains private until stable.
+Website provides public access to installation system.

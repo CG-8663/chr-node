@@ -1,0 +1,51 @@
+# BMad-Method Framework Configuration v4.42.1
+# chr-node Mobile P2P Infrastructure Project
+
+version: "4.42.1"
+project_name: "chr-node"
+project_type: "mobile-p2p-infrastructure"
+
+# Document Configuration
+documents:
+  prd:
+    location: "docs/prd.md"
+    version: "v4"
+    sharding: true
+    shard_directory: "docs/prd/"
+  
+  architecture:
+    location: "docs/architecture.md" 
+    version: "v4"
+    sharding: true
+    shard_directory: "docs/architecture/"
+    
+  stories:
+    directory: "docs/stories/"
+    status_tracking: true
+
+# Agent Configuration
+agents:
+  auto_load_files:
+    dev:
+      - "docs/architecture/coding-standards.md"
+      - "docs/architecture/tech-stack.md" 
+      - "docs/architecture/source-tree.md"
+
+# Debug Configuration
+debug:
+  log_location: ".bmad-core/debug.log"
+  verbose_mode: true
+
+# Project Metadata
+project:
+  description: "Chronara Network Lite Node - Mobile P2P Infrastructure"
+  domain: "mobile-blockchain"
+  target_platforms: ["android", "termux", "linux"]
+  
+# Quality Gates
+quality_gates:
+  code_review_required: true
+  architecture_review_required: true
+  security_review_required: true
+  performance_review_required: true
+  mobile_optimization_review_required: true

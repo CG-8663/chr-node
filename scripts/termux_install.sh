@@ -38,8 +38,8 @@ check_termux_environment() {
 update_packages() {
     echo "📦 Updating package repositories..."
     
-    apt update -y
-    apt upgrade -y
+    pkg update -y
+    pkg upgrade -y
     
     echo "✅ Package repositories updated"
 }
@@ -69,7 +69,7 @@ install_dependencies() {
     
     for package in "${packages[@]}"; do
         echo "Installing $package..."
-        if ! apt install -y "$package"; then
+        if ! pkg install -y "$package"; then
             echo "⚠️  Warning: Failed to install $package, continuing..."
         fi
     done

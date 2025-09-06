@@ -9,11 +9,42 @@ const PORT = process.env.PORT || 3333;
 // Middleware
 app.use(cors());
 app.use(express.static('public'));
+
+// Serve installation script directly from static files
+app.get('/scripts/termux-one-click-install.sh', (req, res) => {
+    const fs = require('fs');
+    const path = require('path');
+    
+    const scriptPath = path.join(__dirname, 'public', 'scripts', 'termux-one-click-install.sh');
+    
+    if (fs.existsSync(scriptPath)) {
+        res.setHeader('Content-Type', 'text/plain');
+        res.setHeader('Content-Disposition', 'attachment; filename="termux-one-click-install.sh"');
+        res.sendFile(scriptPath);
+    } else {
+        res.status(404).send('Installation script not found');
+    }
+});
 app.use(express.json());
 
 // Serve the installation script
 app.get('/install', (req, res) => {
-    const installScript = `#!/data/data/com.termux/files/usr/bin/bash
+    const fs = require('fs');
+    const path = require('path');
+    
+    // Try to serve the actual installation script directly
+    const scriptPath = path.join(__dirname, '..', 'scripts', 'termux-one-click-install.sh');
+    
+    if (fs.existsSync(scriptPath)) {
+        // Serve the actual installation script
+        const actualScript = fs.readFileSync(scriptPath, 'utf8');
+        
+        res.setHeader('Content-Type', 'text/plain');
+        res.setHeader('Content-Disposition', 'attachment; filename="chr-node-install.sh"');
+        res.send(actualScript);
+    } else {
+        // Fallback to stub script that tries to download from GitHub
+        const installScript = `#!/data/data/com.termux/files/usr/bin/bash
 
 # chr-node One-Click Installation
 # Downloaded from: ${req.get('host')}
@@ -26,8 +57,28 @@ echo "=================================="
 echo ""
 echo "Downloading installation script from GitHub..."
 
-# Download the full installation script
-curl -L -o chr-node-install.sh "https://raw.githubusercontent.com/CG-8663/chr-node/main/scripts/termux-one-click-install.sh"
+# Check if GitHub CLI is available for private repo access
+if command -v gh &> /dev/null && gh auth status &> /dev/null; then
+    echo "📡 Using authenticated GitHub access..."
+    gh api repos/CG-8663/chr-node/contents/scripts/termux-one-click-install.sh \\
+        --jq '.content' | base64 -d > chr-node-install.sh
+else
+    echo "📡 Attempting public GitHub access..."
+    curl -L -o chr-node-install.sh "${req.protocol}://${req.get('host')}/scripts/termux-one-click-install.sh"
+fi
+
+# Check if download was successful
+if [ ! -f chr-node-install.sh ] || [ ! -s chr-node-install.sh ]; then
+    echo "❌ Failed to download installation script"
+    echo ""
+    echo "If repository is private, try:"
+    echo "1. Install GitHub CLI: pkg install gh"
+    echo "2. Login: gh auth login"
+    echo "3. Re-run this installer"
+    echo ""
+    echo "Or download script manually and run locally."
+    exit 1
+fi
 
 # Make executable
 chmod +x chr-node-install.sh
@@ -45,9 +96,10 @@ echo "✅ Installation complete!"
 echo "Your chr-node is ready to use."
 `;
 
-    res.setHeader('Content-Type', 'text/plain');
-    res.setHeader('Content-Disposition', 'attachment; filename="chr-node-install.sh"');
-    res.send(installScript);
+        res.setHeader('Content-Type', 'text/plain');
+        res.setHeader('Content-Disposition', 'attachment; filename="chr-node-install.sh"');
+        res.send(installScript);
+    }
 });
 
 // Serve installation statistics
@@ -72,7 +124,7 @@ app.get('/api/health', (req, res) => {
     res.json({
         status: 'healthy',
         service: 'chr-node-installer',
-        version: '1.0.0',
+        version: '1.0.0-beta',
         timestamp: new Date().toISOString()
     });
 });
@@ -486,7 +538,8 @@ app.get('/', (req, res) => {
 
         <div class="footer">
             <p>
-                <strong>Need Help?</strong><br>
+                <strong>chr-node v1.0.0-beta</strong> - 
+                🚀 <a href="https://github.com/CG-8663/chr-node/releases/tag/v1.0.0-beta">Download Binaries</a> •
                 📖 <a href="https://docs.chronara.network">Documentation</a> •
                 💬 <a href="https://discord.gg/chronara">Discord Community</a> •
                 📧 <a href="mailto:support@chronara.network">Support</a>
